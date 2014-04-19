@@ -100,7 +100,7 @@ public class FreshSensorEventListener implements SensorEventListener {
         if ((now - tsOfLastFlush) > FLUSH_INTERVAL) {
             tsOfLastFlush = now;
             Log.d(TAG, "FLUSH: " + now + " | " + "countMaj = " + mCountMaj + " \t countMaj2 = " + mCountMaj2 + " \t countMaj3 = " + mCountMaj3 + " \t countKev = " + mCountKev);
-            
+
             logDataToSdCard(now + "," + mCountMaj + "," + mCountMaj2 + "," + mCountMaj3 + "," + mCountKev + "\n");
             mCountMaj = 0;
             mCountMaj2 = 0;
@@ -108,22 +108,22 @@ public class FreshSensorEventListener implements SensorEventListener {
             mCountKev = 0;
         }
     }
-    
+
     public void logDataToSdCard(String line) {
-    	FileOutputStream fos = null;
+        FileOutputStream fos = null;
 
         try {
             final File dir = new File(Environment.getExternalStorageDirectory().getAbsolutePath() + "/Fresh/" );
-            
+
             if (!dir.exists()) {
-                dir.mkdirs(); 
+                dir.mkdirs();
             }
 
-            final File myFile = new File(dir, "data.txt");
+            final File myFile = new File(dir, "Fresh_data_" + System.currentTimeMillis() + ".txt");
 
-            if (!myFile.exists()) {    
+            if (!myFile.exists()) {
                 myFile.createNewFile();
-            } 
+            }
 
             fos = new FileOutputStream(myFile, true);
             fos.write(line.getBytes());
