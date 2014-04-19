@@ -16,7 +16,7 @@ import android.view.MenuItem;
 import android.view.View;
 import android.view.ViewGroup;
 
-public class MainActivity extends ActionBarActivity {
+public class MainActivity extends ActionBarActivity {\
     private static final String TAG = "FRESH";
 
     //###################################################################
