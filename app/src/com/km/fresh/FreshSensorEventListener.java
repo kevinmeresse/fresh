@@ -6,15 +6,100 @@ import android.hardware.SensorEventListener;
 import android.util.Log;
 
 public class FreshSensorEventListener implements SensorEventListener {
+    //#### Constants ####
     private static final String TAG = "SensorListener";
+    private static final float MOVEMENT_THRESHOLD = 0.1f;
+    private static final float FLUSH_INTERVAL = 60000; //1 minute
+
+    //#### Vars ####
+    private float lastX  = 0.0f;
+    private float lastY  = 0.0f;
+    private float lastZ  = 0.0f;
+    private float lastXDiff  = 0.0f;
+    private float lastYDiff  = 0.0f;
+    private float lastZDiff  = 0.0f;
+    private int mCountMaj = 0;
+    private int mCountMaj2 = 0;
+    private int mCountMaj3 = 0;
+    private int mCountKev = 0;
+    private long tsOfLastFlush = 0l;
 
     @Override
     public void onSensorChanged(SensorEvent event) {
-        Log.d(TAG, "onSensorChanged: Values: "
-                + "x:" + event.values[0]
-                + ", y:" + event.values[1]
-                + ", z:" + event.values[2]
-                + " Type: " + getNameForSensorType(event.sensor.getType()));
+//        Log.d(TAG, "onSensorChanged: Values: "
+//                + "x:" + event.values[0]
+//                + ", y:" + event.values[1]
+//                + ", z:" + event.values[2]
+//                + " Type: " + getNameForSensorType(event.sensor.getType()));
+
+        long now = System.currentTimeMillis();
+
+        if (Math.abs(event.values[0] - lastX) > MOVEMENT_THRESHOLD
+                || Math.abs(event.values[1] - lastY) > MOVEMENT_THRESHOLD
+                || Math.abs(event.values[2] - lastZ) > MOVEMENT_THRESHOLD) {
+            mCountMaj++;
+        }
+
+        if (((event.values[0] - lastX) > 0 && lastXDiff < 0)
+                || ((event.values[1] - lastY) > 0 && lastYDiff < 0)
+                || ((event.values[2] - lastZ) > 0 && lastZDiff < 0)
+                || ((event.values[0] - lastX) < 0 && lastXDiff > 0)
+                || ((event.values[1] - lastY) < 0 && lastYDiff > 0)
+                || ((event.values[2] - lastZ) < 0 && lastZDiff > 0)){
+            mCountMaj2++;
+        }
+
+        if (
+            ((((event.values[0] - lastX) > 0 && lastXDiff < 0)
+                    || ((event.values[0] - lastX) < 0 && lastXDiff > 0))
+                        && Math.abs(event.values[0] - lastX) > MOVEMENT_THRESHOLD)
+            ||
+            ((((event.values[1] - lastY) > 0 && lastYDiff < 0)
+                || ((event.values[1] - lastY) < 0 && lastYDiff > 0))
+                    && Math.abs(event.values[1] - lastY) > MOVEMENT_THRESHOLD)
+            ||
+            ((((event.values[2] - lastZ) > 0 && lastZDiff < 0)
+                || ((event.values[2] - lastZ) < 0 && lastZDiff > 0))
+                    && Math.abs(event.values[2] - lastZ) > MOVEMENT_THRESHOLD)){
+            mCountMaj3++;
+        }
+
+        if ((event.values[0] > 0 && lastX < 0)
+                || (event.values[1] > 0 && lastY < 0)
+                || (event.values[2] > 0 && lastZ < 0)
+                || (event.values[0] < 0 && lastX > 0)
+                || (event.values[1] < 0 && lastY > 0)
+                || (event.values[2] < 0 && lastZ > 0)){
+            mCountKev++;
+        }
+
+//        Log.d(TAG, "onSensorChanged: Values: "
+//                + "x:" + Math.abs(event.values[0] - lastX)
+//                + ",\ty:" + Math.abs(event.values[1] - lastY)
+//                + ",\tz:" + Math.abs(event.values[2] - lastZ)
+//                + ",\tcount:" + mCount
+//                + ",\tts diff:" + (now - tsOfLastFlush)
+//                + ",\tnow:" + now
+//                + ",\ttsOfLastFlush:" + tsOfLastFlush);
+
+        lastXDiff = event.values[0] - lastX;
+        lastYDiff = event.values[1] - lastY;
+        lastZDiff = event.values[2] - lastZ;
+        lastX = event.values[0];
+        lastY = event.values[1];
+        lastZ = event.values[2];
+
+        if (tsOfLastFlush == 0l) {
+            tsOfLastFlush = now;
+        }
+        if ((now - tsOfLastFlush) > FLUSH_INTERVAL) {
+            tsOfLastFlush = now;
+            Log.d(TAG, "FLUSH: countMaj = " + mCountMaj + " \t countMaj2 = " + mCountMaj2 + " \t countMaj3 = " + mCountMaj3 + " \t countKev = " + mCountKev);
+            mCountMaj = 0;
+            mCountMaj2 = 0;
+            mCountMaj3 = 0;
+            mCountKev = 0;
+        }
     }
 
     @Override

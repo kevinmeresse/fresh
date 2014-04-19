@@ -1,6 +1,5 @@
 package com.km.fresh;
 
-import android.content.Intent;
 import android.hardware.Sensor;
 import android.hardware.SensorEventListener;
 import android.hardware.SensorManager;
@@ -16,8 +15,10 @@ import android.view.MenuItem;
 import android.view.View;
 import android.view.ViewGroup;
 
-public class MainActivity extends ActionBarActivity {\
+public class MainActivity extends ActionBarActivity {
     private static final String TAG = "FRESH";
+
+    WakeLock mWakeLock = null;
 
     //###################################################################
     //# Life cycle
@@ -32,13 +33,6 @@ public class MainActivity extends ActionBarActivity {\
             getSupportFragmentManager().beginTransaction()
                     .add(R.id.container, new PlaceholderFragment()).commit();
         }
-
-        Log.d(TAG , "Starting data collection service.");
-
-        //Start the data collection service
-        Intent in = new Intent(getApplicationContext(), DataCollectionService.class);
-        startService(in);
-        Log.d(TAG , "intent = " + in);
     }
 
     @Override
@@ -47,7 +41,6 @@ public class MainActivity extends ActionBarActivity {\
 
          SensorManager mSensorManager = null;
          PowerManager mPowerManager = null;
-         WakeLock mWakeLock = null;
          SensorEventListener mFreshSensorListener = null;
 
      // ----- Register this activity as a SensorEventListener for the Accelerometer sensor ------------
@@ -80,6 +73,9 @@ public class MainActivity extends ActionBarActivity {\
 
     @Override
     protected void onPause() {
+        //Let the phone sleep.
+        mWakeLock.release();
+
         super.onPause();
     }
 
