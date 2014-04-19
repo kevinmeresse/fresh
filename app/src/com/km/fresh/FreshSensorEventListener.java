@@ -1,8 +1,13 @@
 package com.km.fresh;
 
+import java.io.File;
+import java.io.FileOutputStream;
+import java.io.IOException;
+
 import android.hardware.Sensor;
 import android.hardware.SensorEvent;
 import android.hardware.SensorEventListener;
+import android.os.Environment;
 import android.util.Log;
 
 public class FreshSensorEventListener implements SensorEventListener {
@@ -94,11 +99,37 @@ public class FreshSensorEventListener implements SensorEventListener {
         }
         if ((now - tsOfLastFlush) > FLUSH_INTERVAL) {
             tsOfLastFlush = now;
-            Log.d(TAG, "FLUSH: countMaj = " + mCountMaj + " \t countMaj2 = " + mCountMaj2 + " \t countMaj3 = " + mCountMaj3 + " \t countKev = " + mCountKev);
+            Log.d(TAG, "FLUSH: " + now + " | " + "countMaj = " + mCountMaj + " \t countMaj2 = " + mCountMaj2 + " \t countMaj3 = " + mCountMaj3 + " \t countKev = " + mCountKev);
+            
+            logDataToSdCard(now + "," + mCountMaj + "," + mCountMaj2 + "," + mCountMaj3 + "," + mCountKev + "\n");
             mCountMaj = 0;
             mCountMaj2 = 0;
             mCountMaj3 = 0;
             mCountKev = 0;
+        }
+    }
+    
+    public void logDataToSdCard(String line) {
+    	FileOutputStream fos = null;
+
+        try {
+            final File dir = new File(Environment.getExternalStorageDirectory().getAbsolutePath() + "/Fresh/" );
+            
+            if (!dir.exists()) {
+                dir.mkdirs(); 
+            }
+
+            final File myFile = new File(dir, "data.txt");
+
+            if (!myFile.exists()) {    
+                myFile.createNewFile();
+            } 
+
+            fos = new FileOutputStream(myFile, true);
+            fos.write(line.getBytes());
+            fos.close();
+        } catch (IOException e) {
+            e.printStackTrace();
         }
     }
 
