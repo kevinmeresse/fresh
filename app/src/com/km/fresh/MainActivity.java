@@ -1,8 +1,14 @@
 package com.km.fresh;
 
+import java.util.List;
+
 import android.support.v7.app.ActionBarActivity;
 import android.support.v4.app.Fragment;
+import android.content.Context;
+import android.hardware.Sensor;
+import android.hardware.SensorManager;
 import android.os.Bundle;
+import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.Menu;
 import android.view.MenuItem;
@@ -10,6 +16,9 @@ import android.view.View;
 import android.view.ViewGroup;
 
 public class MainActivity extends ActionBarActivity {
+	
+	private static final String TAG = "MainActivity";
+	private SensorManager mSensorManager;
 
 	@Override
 	protected void onCreate(Bundle savedInstanceState) {
@@ -19,6 +28,15 @@ public class MainActivity extends ActionBarActivity {
 		if (savedInstanceState == null) {
 			getSupportFragmentManager().beginTransaction()
 					.add(R.id.container, new PlaceholderFragment()).commit();
+		}
+		
+		mSensorManager = (SensorManager) getSystemService(Context.SENSOR_SERVICE);
+		List<Sensor> deviceSensors = mSensorManager.getSensorList(Sensor.TYPE_ALL);
+		
+		Log.i(TAG, "Retrieved " + deviceSensors.size() + " available sensors on the device:");
+		
+		for (Sensor sensor : deviceSensors) {
+			Log.i(TAG, "  - " + sensor.getName());
 		}
 	}
 
