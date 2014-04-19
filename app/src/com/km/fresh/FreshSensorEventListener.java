@@ -28,6 +28,7 @@ public class FreshSensorEventListener implements SensorEventListener {
     private int mCountMaj3 = 0;
     private int mCountKev = 0;
     private long tsOfLastFlush = 0l;
+    private static final long uniqueFileId = System.currentTimeMillis();
 
     @Override
     public void onSensorChanged(SensorEvent event) {
@@ -119,7 +120,7 @@ public class FreshSensorEventListener implements SensorEventListener {
                 dir.mkdirs();
             }
 
-            final File myFile = new File(dir, "Fresh_data_" + System.currentTimeMillis() + ".txt");
+            final File myFile = new File(dir, "Fresh_data_" + uniqueFileId + ".txt");
 
             if (!myFile.exists()) {
                 myFile.createNewFile();
