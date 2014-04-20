@@ -68,6 +68,10 @@ public class MainActivity extends ActionBarActivity {
             Log.d(TAG, "mFreshSensorListener = " + mFreshSensorListener);
             boolean worked = mSensorManager.registerListener(mFreshSensorListener, accelerometer, SensorManager.SENSOR_DELAY_UI);
             Log.d(TAG, "It worked = " + worked);
+
+//            Test.fakeEventsFromFile("/storage/sdcard0/Fresh/Fresh_data_Kev_raw_1397948625819.csv",
+//                    (FreshSensorEventListener)mFreshSensorListener);
+//            Log.d(TAG, "fake events finished.");
         }
     }
 

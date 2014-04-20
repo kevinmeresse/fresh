@@ -32,6 +32,7 @@ public class FreshSensorEventListener implements SensorEventListener {
     private int changeDirectionThresholdCount = 0;
     private int positiveNegativeCount = 0;
     private int averageOfSevenPreviousCount = 0;
+    private float totalMovementCount = 0f;
     private long tsOfLastFlush = 0l;
     private static final long uniqueFileId = System.currentTimeMillis();
     private Queue<Integer> sevenPrevious = new LinkedList<Integer>();
@@ -40,51 +41,64 @@ public class FreshSensorEventListener implements SensorEventListener {
     public void onSensorChanged(SensorEvent event) {
 
         long now = System.currentTimeMillis();
+        final float x = event.values[0];
+        final float y = event.values[1];
+        final float z = event.values[2];
+
+        // Write logs for RAW data
+        logDataToSdCard(DATA_RAW, now + "," + x + "," + y + "," + z + "\n");
+
+        treatEvent(now, x, y, z);
+    }
+
+    public void treatEvent(final long now, final float x, final float y, final float z) {
 
         // Increment when moving more than threshold
-        if (Math.abs(event.values[0] - lastX) > MOVEMENT_THRESHOLD
-                || Math.abs(event.values[1] - lastY) > MOVEMENT_THRESHOLD
-                || Math.abs(event.values[2] - lastZ) > MOVEMENT_THRESHOLD) {
-        	simpleThresholdCount++;
+        if (Math.abs(x - lastX) > MOVEMENT_THRESHOLD
+                || Math.abs(y - lastY) > MOVEMENT_THRESHOLD
+                || Math.abs(z - lastZ) > MOVEMENT_THRESHOLD) {
+            simpleThresholdCount++;
         }
 
         // Increment when changing movement direction
-        if (((event.values[0] - lastX) > 0 && lastXDiff < 0)
-                || ((event.values[1] - lastY) > 0 && lastYDiff < 0)
-                || ((event.values[2] - lastZ) > 0 && lastZDiff < 0)
-                || ((event.values[0] - lastX) < 0 && lastXDiff > 0)
-                || ((event.values[1] - lastY) < 0 && lastYDiff > 0)
-                || ((event.values[2] - lastZ) < 0 && lastZDiff > 0)) {
-        	changeDirectionCount++;
+        if (((x - lastX) > 0 && lastXDiff < 0)
+                || ((y - lastY) > 0 && lastYDiff < 0)
+                || ((z - lastZ) > 0 && lastZDiff < 0)
+                || ((x - lastX) < 0 && lastXDiff > 0)
+                || ((y - lastY) < 0 && lastYDiff > 0)
+                || ((z - lastZ) < 0 && lastZDiff > 0)) {
+            changeDirectionCount++;
         }
 
         // Increment when changing movement direction AND movement is more than threshold
-        if (((((event.values[0] - lastX) > 0 && lastXDiff < 0)
-                    || ((event.values[0] - lastX) < 0 && lastXDiff > 0))
-                        && Math.abs(event.values[0] - lastX) > MOVEMENT_THRESHOLD)
+        if (((((x - lastX) > 0 && lastXDiff < 0)
+                    || ((x - lastX) < 0 && lastXDiff > 0))
+                        && Math.abs(x - lastX) > MOVEMENT_THRESHOLD)
             ||
-            ((((event.values[1] - lastY) > 0 && lastYDiff < 0)
-                || ((event.values[1] - lastY) < 0 && lastYDiff > 0))
-                    && Math.abs(event.values[1] - lastY) > MOVEMENT_THRESHOLD)
+            ((((y - lastY) > 0 && lastYDiff < 0)
+                || ((y - lastY) < 0 && lastYDiff > 0))
+                    && Math.abs(y - lastY) > MOVEMENT_THRESHOLD)
             ||
-            ((((event.values[2] - lastZ) > 0 && lastZDiff < 0)
-                || ((event.values[2] - lastZ) < 0 && lastZDiff > 0))
-                    && Math.abs(event.values[2] - lastZ) > MOVEMENT_THRESHOLD)) {
-        	changeDirectionThresholdCount++;
+            ((((z - lastZ) > 0 && lastZDiff < 0)
+                || ((z - lastZ) < 0 && lastZDiff > 0))
+                    && Math.abs(z - lastZ) > MOVEMENT_THRESHOLD)) {
+            changeDirectionThresholdCount++;
         }
 
-        // Increment when switching from positive to negative (and vice-versa) 
-        if ((event.values[0] > 0 && lastX < 0)
-                || (event.values[1] > 0 && lastY < 0)
-                || (event.values[2] > 0 && lastZ < 0)
-                || (event.values[0] < 0 && lastX > 0)
-                || (event.values[1] < 0 && lastY > 0)
-                || (event.values[2] < 0 && lastZ > 0)) {
-        	positiveNegativeCount++;
+        // Increment when switching from positive to negative (and vice-versa)
+        if ((x > 0 && lastX < 0)
+                || (y > 0 && lastY < 0)
+                || (z > 0 && lastZ < 0)
+                || (x < 0 && lastX > 0)
+                || (y < 0 && lastY > 0)
+                || (z < 0 && lastZ > 0)) {
+            positiveNegativeCount++;
         }
-        
-        // Write logs for RAW data
-        logDataToSdCard(DATA_RAW, now + "," + event.values[0] + "," + event.values[1] + "," + event.values[2] + "\n");
+
+        // Add up all the movements to get a sense of how much you moved in total
+        totalMovementCount += Math.abs(x - lastX);
+        totalMovementCount += Math.abs(y - lastY);
+        totalMovementCount += Math.abs(z - lastZ);
 
 //        Log.d(TAG, "onSensorChanged: Values: "
 //                + "x:" + Math.abs(event.values[0] - lastX)
@@ -96,33 +110,34 @@ public class FreshSensorEventListener implements SensorEventListener {
 //                + ",\ttsOfLastFlush:" + tsOfLastFlush);
 
         // Remember values
-        lastXDiff = event.values[0] - lastX;
-        lastYDiff = event.values[1] - lastY;
-        lastZDiff = event.values[2] - lastZ;
-        lastX = event.values[0];
-        lastY = event.values[1];
-        lastZ = event.values[2];
+        lastXDiff = x - lastX;
+        lastYDiff = y - lastY;
+        lastZDiff = z - lastZ;
+        lastX = x;
+        lastY = y;
+        lastZ = z;
 
         if (tsOfLastFlush == 0l) {
             tsOfLastFlush = now;
         }
-        
+
         // Flush count every FLUSH_INTERVAL time
         if ((now - tsOfLastFlush) > FLUSH_INTERVAL) {
             tsOfLastFlush = now;
-            
+
             // Calculate average for 7 previous minutes
             averageOfSevenPreviousCount = calculateSevenPreviousAverage();
-            
+
             // Write logs for COUNT
-            Log.d(TAG, "FLUSH COUNT: " + now + " | " + "Simple threshold = " + simpleThresholdCount + " \t Change direction = " + changeDirectionCount + " \t Change direction + threshold = " + changeDirectionThresholdCount + " \t Positive to negative = " + positiveNegativeCount + " \t Average of 7 previous = " + averageOfSevenPreviousCount);
-            logDataToSdCard(DATA_COUNT, now + "," + simpleThresholdCount + "," + changeDirectionCount + "," + changeDirectionThresholdCount + "," + positiveNegativeCount + "," + averageOfSevenPreviousCount + "\n");
-            
+            Log.d(TAG, "FLUSH COUNT: " + now + " | " + "Simple threshold = " + simpleThresholdCount + " \t Change direction = " + changeDirectionCount + " \t Change direction + threshold = " + changeDirectionThresholdCount + " \t Positive to negative = " + positiveNegativeCount + " \t Average of 7 previous = " + averageOfSevenPreviousCount + " \t total movement = " + totalMovementCount);
+            logDataToSdCard(DATA_COUNT, now + "," + simpleThresholdCount + "," + changeDirectionCount + "," + changeDirectionThresholdCount + "," + positiveNegativeCount + "," + averageOfSevenPreviousCount + "," + totalMovementCount  + "\n");
+
             // Reset count values
             simpleThresholdCount = 0;
             changeDirectionCount = 0;
             changeDirectionThresholdCount = 0;
             positiveNegativeCount = 0;
+            totalMovementCount = 0;
         }
     }
 
@@ -138,9 +153,9 @@ public class FreshSensorEventListener implements SensorEventListener {
 
             File myFile = null;
             if (DATA_RAW.equals(dataType)) {
-            	myFile = new File(dir, "Fresh_data_raw_" + uniqueFileId + ".csv");
+                myFile = new File(dir, "Fresh_data_raw_" + uniqueFileId + ".csv");
             } else {
-            	myFile = new File(dir, "Fresh_data_count_" + uniqueFileId + ".csv");
+                myFile = new File(dir, "Fresh_data_count_" + uniqueFileId + ".csv");
             }
 
             if (!myFile.exists()) {
@@ -154,19 +169,19 @@ public class FreshSensorEventListener implements SensorEventListener {
             e.printStackTrace();
         }
     }
-    
+
     public int calculateSevenPreviousAverage() {
-    	sevenPrevious.add(simpleThresholdCount);
-    	if (sevenPrevious.size() == 0) {
-        	return simpleThresholdCount;
+        sevenPrevious.add(simpleThresholdCount);
+        if (sevenPrevious.size() == 0) {
+            return simpleThresholdCount;
         } else if (sevenPrevious.size() > 7) {
-        	sevenPrevious.poll();
+            sevenPrevious.poll();
         }
         int sum = 0;
         for (Integer value : sevenPrevious) {
-			sum += value;
-		}
-        
+            sum += value;
+        }
+
         return sum / sevenPrevious.size();
     }
 
